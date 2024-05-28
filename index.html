@@ -1,0 +1,907 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/MarkerCluster.css">
+        <link rel="stylesheet" href="css/MarkerCluster.Default.css">
+        <link rel="stylesheet" href="css/leaflet-search.css">
+        <link rel="stylesheet" href="css/filter.css">
+<link rel="stylesheet" href="css/nouislider.min.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title>FSM Language map</title>
+    </head>
+    <body>
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/L.Control.Layers.Tree.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet.markercluster.js"></script>
+        <script src="js/leaflet-search.js"></script>
+        <script src="js/tailDT.js"></script>
+<script src="js/nouislider.min.js"></script>
+<script src="js/wNumb.js"></script>
+        <script src="data/LiteracyEnglish_1.js"></script>
+        <script src="data/LiteracyLocal_2.js"></script>
+        <script src="data/LanguageMap_3.js"></script>
+        <script>
+        var highlightLayer;
+        function highlightFeature(e) {
+            highlightLayer = e.target;
+
+            if (e.target.feature.geometry.type === 'LineString' || e.target.feature.geometry.type === 'MultiLineString') {
+              highlightLayer.setStyle({
+                color: '#0099ff',
+              });
+            } else {
+              highlightLayer.setStyle({
+                fillColor: '#0099ff',
+                fillOpacity: 1
+              });
+            }
+            highlightLayer.openPopup();
+        }
+        var map = L.map('map', {
+            zoomControl:true, maxZoom:28, minZoom:1
+        }).fitBounds([[-2.246619307330085,133.52777667787484],[14.414515756556813,159.66185667787465]]);
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        document.querySelector(".leaflet-popup-pane").addEventListener("load", function(event) {
+          var tagName = event.target.tagName,
+            popup = map._popup;
+          // Also check if flag is already set.
+          if (tagName === "IMG" && popup && !popup._updated) {
+            popup._updated = true; // Set flag to prevent looping.
+            popup.update();
+          }
+        }, true);
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+        }
+        map.createPane('pane_OSMBasemap_0');
+        map.getPane('pane_OSMBasemap_0').style.zIndex = 400;
+        var layer_OSMBasemap_0 = L.tileLayer('http://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            pane: 'pane_OSMBasemap_0',
+            opacity: 1.0,
+            attribution: '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors, CC-BY-SA</a>',
+            minZoom: 1,
+            maxZoom: 28,
+            minNativeZoom: 0,
+            maxNativeZoom: 19
+        });
+        layer_OSMBasemap_0;
+        map.addLayer(layer_OSMBasemap_0);
+        function pop_LiteracyEnglish_1(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">Island</th>\
+                        <td class="visible-with-data" id="Island">' + (feature.properties['Island'] !== null ? autolinker.link(feature.properties['Island'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Local_Lang</th>\
+                        <td class="visible-with-data" id="Local_Lang">' + (feature.properties['Local_Lang'] !== null ? autolinker.link(feature.properties['Local_Lang'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Other_Lang</th>\
+                        <td class="visible-with-data" id="Other_Lang">' + (feature.properties['Other_Lang'] !== null ? autolinker.link(feature.properties['Other_Lang'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Literacy L</th>\
+                        <td class="visible-with-data" id="Literacy L">' + (feature.properties['Literacy L'] !== null ? autolinker.link(feature.properties['Literacy L'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Literacy_1</th>\
+                        <td class="visible-with-data" id="Literacy_1">' + (feature.properties['Literacy_1'] !== null ? autolinker.link(feature.properties['Literacy_1'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Avg. % Pop</th>\
+                        <td class="visible-with-data" id="Avg. % Pop">' + (feature.properties['Avg. % Pop'] !== null ? autolinker.link(feature.properties['Avg. % Pop'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Avg. % P_1</th>\
+                        <td class="visible-with-data" id="Avg. % P_1">' + (feature.properties['Avg. % P_1'] !== null ? autolinker.link(feature.properties['Avg. % P_1'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+            var popup = layer.getPopup();
+            var content = popup.getContent();
+            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
+            popup.setContent(updatedContent);
+        }
+
+        function style_LiteracyEnglish_1_0(feature) {
+            switch(String(feature.properties['Literacy_1'])) {
+                case 'High':
+                    return {
+                pane: 'pane_LiteracyEnglish_1',
+                radius: 10.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(11,4,5,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Low':
+                    return {
+                pane: 'pane_LiteracyEnglish_1',
+                radius: 10.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(53,123,163,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Moderate':
+                    return {
+                pane: 'pane_LiteracyEnglish_1',
+                radius: 10.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(222,245,229,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_LiteracyEnglish_1');
+        map.getPane('pane_LiteracyEnglish_1').style.zIndex = 401;
+        map.getPane('pane_LiteracyEnglish_1').style['mix-blend-mode'] = 'normal';
+        var layer_LiteracyEnglish_1 = new L.geoJson(json_LiteracyEnglish_1, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_LiteracyEnglish_1',
+            layerName: 'layer_LiteracyEnglish_1',
+            pane: 'pane_LiteracyEnglish_1',
+            onEachFeature: pop_LiteracyEnglish_1,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_LiteracyEnglish_1_0(feature));
+            },
+        });
+        var cluster_LiteracyEnglish_1 = new L.MarkerClusterGroup({showCoverageOnHover: false,
+            spiderfyDistanceMultiplier: 2});
+        cluster_LiteracyEnglish_1.addLayer(layer_LiteracyEnglish_1);
+
+        bounds_group.addLayer(layer_LiteracyEnglish_1);
+        function pop_LiteracyLocal_2(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">Island</th>\
+                        <td class="visible-with-data" id="Island">' + (feature.properties['Island'] !== null ? autolinker.link(feature.properties['Island'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Descriptio'] !== null ? autolinker.link(feature.properties['Descriptio'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Local_Lang</th>\
+                        <td class="visible-with-data" id="Local_Lang">' + (feature.properties['Local_Lang'] !== null ? autolinker.link(feature.properties['Local_Lang'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Other_Lang</th>\
+                        <td class="visible-with-data" id="Other_Lang">' + (feature.properties['Other_Lang'] !== null ? autolinker.link(feature.properties['Other_Lang'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Literacy L</th>\
+                        <td class="visible-with-data" id="Literacy L">' + (feature.properties['Literacy L'] !== null ? autolinker.link(feature.properties['Literacy L'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Literacy_1</th>\
+                        <td class="visible-with-data" id="Literacy_1">' + (feature.properties['Literacy_1'] !== null ? autolinker.link(feature.properties['Literacy_1'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Avg. % Pop</th>\
+                        <td class="visible-with-data" id="Avg. % Pop">' + (feature.properties['Avg. % Pop'] !== null ? autolinker.link(feature.properties['Avg. % Pop'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Avg. % P_1</th>\
+                        <td class="visible-with-data" id="Avg. % P_1">' + (feature.properties['Avg. % P_1'] !== null ? autolinker.link(feature.properties['Avg. % P_1'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+            var popup = layer.getPopup();
+            var content = popup.getContent();
+            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
+            popup.setContent(updatedContent);
+        }
+
+        function style_LiteracyLocal_2_0(feature) {
+            switch(String(feature.properties['Literacy L'])) {
+                case 'High':
+                    return {
+                pane: 'pane_LiteracyLocal_2',
+                radius: 10.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(250,235,221,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_LiteracyLocal_2');
+        map.getPane('pane_LiteracyLocal_2').style.zIndex = 402;
+        map.getPane('pane_LiteracyLocal_2').style['mix-blend-mode'] = 'normal';
+        var layer_LiteracyLocal_2 = new L.geoJson(json_LiteracyLocal_2, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_LiteracyLocal_2',
+            layerName: 'layer_LiteracyLocal_2',
+            pane: 'pane_LiteracyLocal_2',
+            onEachFeature: pop_LiteracyLocal_2,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_LiteracyLocal_2_0(feature));
+            },
+        });
+        var cluster_LiteracyLocal_2 = new L.MarkerClusterGroup({showCoverageOnHover: false,
+            spiderfyDistanceMultiplier: 2});
+        cluster_LiteracyLocal_2.addLayer(layer_LiteracyLocal_2);
+
+        bounds_group.addLayer(layer_LiteracyLocal_2);
+        function pop_LanguageMap_3(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                    if (typeof layer.closePopup == 'function') {
+                        layer.closePopup();
+                    } else {
+                        layer.eachLayer(function(feature){
+                            feature.closePopup()
+                        });
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <th scope="row">Island</th>\
+                        <td class="visible-with-data" id="Island">' + (feature.properties['Island'] !== null ? autolinker.link(feature.properties['Island'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Local_Lang</th>\
+                        <td class="visible-with-data" id="Local_Lang">' + (feature.properties['Local_Lang'] !== null ? autolinker.link(feature.properties['Local_Lang'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Other_Lang</th>\
+                        <td class="visible-with-data" id="Other_Lang">' + (feature.properties['Other_Lang'] !== null ? autolinker.link(feature.properties['Other_Lang'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Literacy L</th>\
+                        <td class="visible-with-data" id="Literacy L">' + (feature.properties['Literacy L'] !== null ? autolinker.link(feature.properties['Literacy L'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Literacy_1</th>\
+                        <td class="visible-with-data" id="Literacy_1">' + (feature.properties['Literacy_1'] !== null ? autolinker.link(feature.properties['Literacy_1'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Avg. % Pop</th>\
+                        <td class="visible-with-data" id="Avg. % Pop">' + (feature.properties['Avg. % Pop'] !== null ? autolinker.link(feature.properties['Avg. % Pop'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Avg. % P_1</th>\
+                        <td class="visible-with-data" id="Avg. % P_1">' + (feature.properties['Avg. % P_1'] !== null ? autolinker.link(feature.properties['Avg. % P_1'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            layer.bindPopup(popupContent, {maxHeight: 400});
+            var popup = layer.getPopup();
+            var content = popup.getContent();
+            var updatedContent = removeEmptyRowsFromPopupContent(content, feature);
+            popup.setContent(updatedContent);
+        }
+
+        function style_LanguageMap_3_0(feature) {
+            switch(String(feature.properties['Local_Lang'])) {
+                case 'Chuukese':
+                    return {
+                pane: 'pane_LanguageMap_3',
+                radius: 10.000000000000002,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(215,25,28,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Kosraean':
+                    return {
+                pane: 'pane_LanguageMap_3',
+                radius: 10.000000000000002,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(232,91,59,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Nukuoro, Pohnpeian':
+                    return {
+                pane: 'pane_LanguageMap_3',
+                radius: 10.000000000000002,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(249,157,89,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Pingelapese':
+                    return {
+                pane: 'pane_LanguageMap_3',
+                radius: 10.000000000000002,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(254,201,128,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Pohnpeian':
+                    return {
+                pane: 'pane_LanguageMap_3',
+                radius: 10.000000000000002,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(255,237,170,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Sapwuahfik':
+                    return {
+                pane: 'pane_LanguageMap_3',
+                radius: 10.000000000000002,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(236,247,185,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Satawalese, Chuukese':
+                    return {
+                pane: 'pane_LanguageMap_3',
+                radius: 10.000000000000002,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(199,232,173,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Ulithian':
+                    return {
+                pane: 'pane_LanguageMap_3',
+                radius: 10.000000000000002,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(157,211,166,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Woleaian':
+                    return {
+                pane: 'pane_LanguageMap_3',
+                radius: 10.000000000000002,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(100,171,176,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Yapese':
+                    return {
+                pane: 'pane_LanguageMap_3',
+                radius: 10.000000000000002,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(43,131,186,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_LanguageMap_3');
+        map.getPane('pane_LanguageMap_3').style.zIndex = 403;
+        map.getPane('pane_LanguageMap_3').style['mix-blend-mode'] = 'normal';
+        var layer_LanguageMap_3 = new L.geoJson(json_LanguageMap_3, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_LanguageMap_3',
+            layerName: 'layer_LanguageMap_3',
+            pane: 'pane_LanguageMap_3',
+            onEachFeature: pop_LanguageMap_3,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_LanguageMap_3_0(feature));
+            },
+        });
+        var cluster_LanguageMap_3 = new L.MarkerClusterGroup({showCoverageOnHover: false,
+            spiderfyDistanceMultiplier: 2});
+        cluster_LanguageMap_3.addLayer(layer_LanguageMap_3);
+
+        bounds_group.addLayer(layer_LanguageMap_3);
+        cluster_LanguageMap_3.addTo(map);
+            var title = new L.Control();
+            title.onAdd = function (map) {
+                this._div = L.DomUtil.create('div', 'info');
+                this.update();
+                return this._div;
+            };
+            title.update = function () {
+                this._div.innerHTML = '<h2>FSM Language map</h2>';
+            };
+            title.addTo(map);
+            var abstract = new L.Control({'position':'bottomright'});
+            abstract.onAdd = function (map) {
+                this._div = L.DomUtil.create('div',
+                'leaflet-control abstract');
+                this._div.id = 'abstract'
+
+                    abstract.show();
+                    return this._div;
+                };
+                abstract.show = function () {
+                    this._div.classList.remove("abstract");
+                    this._div.classList.add("abstractUncollapsed");
+                    this._div.innerHTML = 'Each state consists of numerous islands and atolls, each with its unique linguistic landscape. The FSM has a diverse array of languages reflecting its rich cultural heritage ';
+            };
+            abstract.addTo(map);
+        var baseMaps = {};
+        var overlaysTree = [
+            {label: 'Language Map<br /><table><tr><td style="text-align: center;"><img src="legend/LanguageMap_3_Chuukese0.png" /></td><td>Chuukese</td></tr><tr><td style="text-align: center;"><img src="legend/LanguageMap_3_Kosraean1.png" /></td><td>Kosraean</td></tr><tr><td style="text-align: center;"><img src="legend/LanguageMap_3_NukuoroPohnpeian2.png" /></td><td>Nukuoro, Pohnpeian</td></tr><tr><td style="text-align: center;"><img src="legend/LanguageMap_3_Pingelapese3.png" /></td><td>Pingelapese</td></tr><tr><td style="text-align: center;"><img src="legend/LanguageMap_3_Pohnpeian4.png" /></td><td>Pohnpeian</td></tr><tr><td style="text-align: center;"><img src="legend/LanguageMap_3_Sapwuahfik5.png" /></td><td>Sapwuahfik</td></tr><tr><td style="text-align: center;"><img src="legend/LanguageMap_3_SatawaleseChuukese6.png" /></td><td>Satawalese, Chuukese</td></tr><tr><td style="text-align: center;"><img src="legend/LanguageMap_3_Ulithian7.png" /></td><td>Ulithian</td></tr><tr><td style="text-align: center;"><img src="legend/LanguageMap_3_Woleaian8.png" /></td><td>Woleaian</td></tr><tr><td style="text-align: center;"><img src="legend/LanguageMap_3_Yapese9.png" /></td><td>Yapese</td></tr></table>', layer: cluster_LanguageMap_3},
+            {label: 'Literacy (Local)<br /><table><tr><td style="text-align: center;"><img src="legend/LiteracyLocal_2_High0.png" /></td><td>High</td></tr></table>', layer: cluster_LiteracyLocal_2},
+            {label: 'Literacy (English)<br /><table><tr><td style="text-align: center;"><img src="legend/LiteracyEnglish_1_High0.png" /></td><td>High</td></tr><tr><td style="text-align: center;"><img src="legend/LiteracyEnglish_1_Low1.png" /></td><td>Low</td></tr><tr><td style="text-align: center;"><img src="legend/LiteracyEnglish_1_Moderate2.png" /></td><td>Moderate</td></tr></table>', layer: cluster_LiteracyEnglish_1},
+            {label: "OSM Basemap", layer: layer_OSMBasemap_0},]
+        var lay = L.control.layers.tree(null, overlaysTree,{
+            //namedToggle: true,
+            //selectorBack: false,
+            //closedSymbol: '&#8862; &#x1f5c0;',
+            //openedSymbol: '&#8863; &#x1f5c1;',
+            //collapseAll: 'Collapse all',
+            //expandAll: 'Expand all',
+            collapsed: true,
+        });
+        lay.addTo(map);
+        setBounds();
+        map.addControl(new L.Control.Search({
+            layer: cluster_LanguageMap_3,
+            initial: false,
+            hideMarkerOnCollapse: true,
+            propertyName: 'Island'}));
+        document.getElementsByClassName('search-button')[0].className +=
+         ' fa fa-binoculars';
+        var mapDiv = document.getElementById('map');
+        var row = document.createElement('div');
+        row.className="row";
+        row.id="all";
+        row.style.height = "100%";
+        var col1 = document.createElement('div');
+        col1.className="col9";
+        col1.id = "mapWindow";
+        col1.style.height = "99%";
+        col1.style.width = "80%";
+        col1.style.display = "inline-block";
+        var col2 = document.createElement('div');
+        col2.className="col3";
+        col2.id = "menu";
+        col2.style.display = "inline-block";
+        mapDiv.parentNode.insertBefore(row, mapDiv);
+        document.getElementById("all").appendChild(col1);
+        document.getElementById("all").appendChild(col2);
+        col1.appendChild(mapDiv)
+        var Filters = {"Island": "str","Local_Lang": "str","Literacy_1": "str","Literacy L": "str"};
+        function filterFunc() {
+          map.eachLayer(function(lyr){
+          if ("options" in lyr && "dataVar" in lyr["options"]){
+            features = this[lyr["options"]["dataVar"]].features.slice(0);
+            try{
+              for (key in Filters){
+                keyS = key.replace(/[^a-zA-Z0-9_]/g, "")
+                if (Filters[key] == "str" || Filters[key] == "bool"){
+                  var selection = [];
+                  var options = document.getElementById("sel_" + keyS).options
+                  for (var i=0; i < options.length; i++) {
+                    if (options[i].selected) selection.push(options[i].value);
+                  }
+                    try{
+                      if (key in features[0].properties){
+                        for (i = features.length - 1;
+                          i >= 0; --i){
+                          if (selection.indexOf(
+                          features[i].properties[key])<0
+                          && selection.length>0) {
+                          features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                  }
+                }
+                if (Filters[key] == "int"){
+                  sliderVals =  document.getElementById(
+                    "div_" + keyS).noUiSlider.get();
+                  try{
+                    if (key in features[0].properties){
+                    for (i = features.length - 1; i >= 0; --i){
+                      if (parseInt(features[i].properties[key])
+                          < sliderVals[0]
+                          || parseInt(features[i].properties[key])
+                          > sliderVals[1]){
+                            features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                    }
+                  }
+                if (Filters[key] == "real"){
+                  sliderVals =  document.getElementById(
+                    "div_" + keyS).noUiSlider.get();
+                  try{
+                    if (key in features[0].properties){
+                    for (i = features.length - 1; i >= 0; --i){
+                      if (features[i].properties[key]
+                          < sliderVals[0]
+                          || features[i].properties[key]
+                          > sliderVals[1]){
+                            features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                    }
+                  }
+                if (Filters[key] == "date"
+                  || Filters[key] == "datetime"
+                  || Filters[key] == "time"){
+                  try{
+                    if (key in features[0].properties){
+                      HTMLkey = key.replace(/[&\/\\#,+()$~%.'":*?<>{} ]/g, '');
+                      startdate = document.getElementById("dat_" +
+                        HTMLkey + "_date1").value.replace(" ", "T");
+                      enddate = document.getElementById("dat_" +
+                        HTMLkey + "_date2").value.replace(" ", "T");
+                      for (i = features.length - 1; i >= 0; --i){
+                        if (features[i].properties[key] < startdate
+                          || features[i].properties[key] > enddate){
+                          features.splice(i,1);
+                        }
+                      }
+                    }
+                  } catch(err){
+                  }
+                }
+              }
+            } catch(err){
+            }
+          this[lyr["options"]["layerName"]].clearLayers();
+          this[lyr["options"]["layerName"]].addData(features);
+          }
+          })
+        }
+            document.getElementById("menu").appendChild(
+                document.createElement("div"));
+            var div_Island = document.createElement('div');
+            div_Island.id = "div_Island";
+            div_Island.className= "filterselect";
+            document.getElementById("menu").appendChild(div_Island);
+            sel_Island = document.createElement('select');
+            sel_Island.multiple = true;
+            sel_Island.size = 10;
+            sel_Island.id = "sel_Island";
+            var Island_options_str = "<option value='' unselected></option>";
+            sel_Island.onchange = function(){filterFunc()};
+            Island_options_str  += '<option value="Chuuk">Chuuk</option>';
+            Island_options_str  += '<option value="Colonia">Colonia</option>';
+            Island_options_str  += '<option value="Eot">Eot</option>';
+            Island_options_str  += '<option value="Fefan">Fefan</option>';
+            Island_options_str  += '<option value="Kitti">Kitti</option>';
+            Island_options_str  += '<option value="Kolonia">Kolonia</option>';
+            Island_options_str  += '<option value="Kosrae">Kosrae</option>';
+            Island_options_str  += '<option value="Lelu">Lelu</option>';
+            Island_options_str  += '<option value="Maap">Maap</option>';
+            Island_options_str  += '<option value="Madolenihmw">Madolenihmw</option>';
+            Island_options_str  += '<option value="Malem">Malem</option>';
+            Island_options_str  += '<option value="Mortlock Islands">Mortlock Islands</option>';
+            Island_options_str  += '<option value="Namonuito">Namonuito</option>';
+            Island_options_str  += '<option value="Nukuoro">Nukuoro</option>';
+            Island_options_str  += '<option value="Oroluk">Oroluk</option>';
+            Island_options_str  += '<option value="Piis-Emwar">Piis-Emwar</option>';
+            Island_options_str  += '<option value="Pingelap">Pingelap</option>';
+            Island_options_str  += '<option value="Pohnpei">Pohnpei</option>';
+            Island_options_str  += '<option value="Rumung">Rumung</option>';
+            Island_options_str  += '<option value="Sapwuahfik">Sapwuahfik</option>';
+            Island_options_str  += '<option value="Satawal">Satawal</option>';
+            Island_options_str  += '<option value="Satawan">Satawan</option>';
+            Island_options_str  += '<option value="Sokehs">Sokehs</option>';
+            Island_options_str  += '<option value="Tofol">Tofol</option>';
+            Island_options_str  += '<option value="Tonoas">Tonoas</option>';
+            Island_options_str  += '<option value="Udot">Udot</option>';
+            Island_options_str  += '<option value="Ulithi">Ulithi</option>';
+            Island_options_str  += '<option value="Weno">Weno</option>';
+            Island_options_str  += '<option value="Woleai">Woleai</option>';
+            Island_options_str  += '<option value="Yap">Yap</option>';
+            sel_Island.innerHTML = Island_options_str;
+            div_Island.appendChild(sel_Island);
+            var lab_Island = document.createElement('div');
+            lab_Island.innerHTML = 'Island';
+            lab_Island.className = 'filterlabel';
+            div_Island.appendChild(lab_Island);
+            var reset_Island = document.createElement('div');
+            reset_Island.innerHTML = 'clear filter';
+            reset_Island.className = 'filterlabel';
+            reset_Island.onclick = function() {
+                var options = document.getElementById("sel_Island").options;
+                for (var i=0; i < options.length; i++) {
+                    options[i].selected = false;
+                }
+                filterFunc();
+            };
+            div_Island.appendChild(reset_Island);
+            document.getElementById("menu").appendChild(
+                document.createElement("div"));
+            var div_Local_Lang = document.createElement('div');
+            div_Local_Lang.id = "div_Local_Lang";
+            div_Local_Lang.className= "filterselect";
+            document.getElementById("menu").appendChild(div_Local_Lang);
+            sel_Local_Lang = document.createElement('select');
+            sel_Local_Lang.multiple = true;
+            sel_Local_Lang.size = 10;
+            sel_Local_Lang.id = "sel_Local_Lang";
+            var Local_Lang_options_str = "<option value='' unselected></option>";
+            sel_Local_Lang.onchange = function(){filterFunc()};
+            Local_Lang_options_str  += '<option value="Chuukese">Chuukese</option>';
+            Local_Lang_options_str  += '<option value="Kosraean">Kosraean</option>';
+            Local_Lang_options_str  += '<option value="N/A">N/A</option>';
+            Local_Lang_options_str  += '<option value="Nukuoro, Pohnpeian">Nukuoro, Pohnpeian</option>';
+            Local_Lang_options_str  += '<option value="Pingelapese">Pingelapese</option>';
+            Local_Lang_options_str  += '<option value="Pohnpeian">Pohnpeian</option>';
+            Local_Lang_options_str  += '<option value="Sapwuahfik">Sapwuahfik</option>';
+            Local_Lang_options_str  += '<option value="Satawalese, Chuukese">Satawalese, Chuukese</option>';
+            Local_Lang_options_str  += '<option value="Ulithian">Ulithian</option>';
+            Local_Lang_options_str  += '<option value="Woleaian">Woleaian</option>';
+            Local_Lang_options_str  += '<option value="Yapese">Yapese</option>';
+            sel_Local_Lang.innerHTML = Local_Lang_options_str;
+            div_Local_Lang.appendChild(sel_Local_Lang);
+            var lab_Local_Lang = document.createElement('div');
+            lab_Local_Lang.innerHTML = 'Local_Lang';
+            lab_Local_Lang.className = 'filterlabel';
+            div_Local_Lang.appendChild(lab_Local_Lang);
+            var reset_Local_Lang = document.createElement('div');
+            reset_Local_Lang.innerHTML = 'clear filter';
+            reset_Local_Lang.className = 'filterlabel';
+            reset_Local_Lang.onclick = function() {
+                var options = document.getElementById("sel_Local_Lang").options;
+                for (var i=0; i < options.length; i++) {
+                    options[i].selected = false;
+                }
+                filterFunc();
+            };
+            div_Local_Lang.appendChild(reset_Local_Lang);
+            document.getElementById("menu").appendChild(
+                document.createElement("div"));
+            var div_Literacy_1 = document.createElement('div');
+            div_Literacy_1.id = "div_Literacy_1";
+            div_Literacy_1.className= "filterselect";
+            document.getElementById("menu").appendChild(div_Literacy_1);
+            sel_Literacy_1 = document.createElement('select');
+            sel_Literacy_1.multiple = true;
+            sel_Literacy_1.size = 4;
+            sel_Literacy_1.id = "sel_Literacy_1";
+            var Literacy_1_options_str = "<option value='' unselected></option>";
+            sel_Literacy_1.onchange = function(){filterFunc()};
+            Literacy_1_options_str  += '<option value="High">High</option>';
+            Literacy_1_options_str  += '<option value="Low">Low</option>';
+            Literacy_1_options_str  += '<option value="Moderate">Moderate</option>';
+            Literacy_1_options_str  += '<option value="N/A">N/A</option>';
+            sel_Literacy_1.innerHTML = Literacy_1_options_str;
+            div_Literacy_1.appendChild(sel_Literacy_1);
+            var lab_Literacy_1 = document.createElement('div');
+            lab_Literacy_1.innerHTML = 'Literacy_1';
+            lab_Literacy_1.className = 'filterlabel';
+            div_Literacy_1.appendChild(lab_Literacy_1);
+            var reset_Literacy_1 = document.createElement('div');
+            reset_Literacy_1.innerHTML = 'clear filter';
+            reset_Literacy_1.className = 'filterlabel';
+            reset_Literacy_1.onclick = function() {
+                var options = document.getElementById("sel_Literacy_1").options;
+                for (var i=0; i < options.length; i++) {
+                    options[i].selected = false;
+                }
+                filterFunc();
+            };
+            div_Literacy_1.appendChild(reset_Literacy_1);
+            document.getElementById("menu").appendChild(
+                document.createElement("div"));
+            var div_LiteracyL = document.createElement('div');
+            div_LiteracyL.id = "div_LiteracyL";
+            div_LiteracyL.className= "filterselect";
+            document.getElementById("menu").appendChild(div_LiteracyL);
+            sel_LiteracyL = document.createElement('select');
+            sel_LiteracyL.multiple = true;
+            sel_LiteracyL.size = 2;
+            sel_LiteracyL.id = "sel_LiteracyL";
+            var LiteracyL_options_str = "<option value='' unselected></option>";
+            sel_LiteracyL.onchange = function(){filterFunc()};
+            LiteracyL_options_str  += '<option value="High">High</option>';
+            LiteracyL_options_str  += '<option value="N/A">N/A</option>';
+            sel_LiteracyL.innerHTML = LiteracyL_options_str;
+            div_LiteracyL.appendChild(sel_LiteracyL);
+            var lab_LiteracyL = document.createElement('div');
+            lab_LiteracyL.innerHTML = 'Literacy L';
+            lab_LiteracyL.className = 'filterlabel';
+            div_LiteracyL.appendChild(lab_LiteracyL);
+            var reset_LiteracyL = document.createElement('div');
+            reset_LiteracyL.innerHTML = 'clear filter';
+            reset_LiteracyL.className = 'filterlabel';
+            reset_LiteracyL.onclick = function() {
+                var options = document.getElementById("sel_LiteracyL").options;
+                for (var i=0; i < options.length; i++) {
+                    options[i].selected = false;
+                }
+                filterFunc();
+            };
+            div_LiteracyL.appendChild(reset_LiteracyL);
+        </script>
+    </body>
+</html>
